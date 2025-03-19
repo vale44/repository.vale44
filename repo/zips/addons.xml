@@ -21,7 +21,7 @@
         <dir>
             <info compressed="false">https://raw.githubusercontent.com/vale44/repository.vale44/main/repo/zips/addons.xml</info>
             <checksum>https://raw.githubusercontent.com/vale44/repository.vale44/main/addons.xml.md5</checksum>
-            <datadir zip="true">https://raw.githubusercontent.com/vale44/repository.vale44/ea945e1c9a9104ae286e71792977adf790506230/repo/zips/</datadir>
+            <datadir zip="true">https://raw.githubusercontent.com/vale44/repository.vale44/main/repo/zips/</datadir>
         </dir>
     </extension>
     <extension point="xbmc.addon.metadata">
