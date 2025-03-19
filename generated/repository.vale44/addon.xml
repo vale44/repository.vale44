@@ -2,9 +2,9 @@
 <addon id="repository.vale44" name="Auto Cleaner Repository" version="1.0" provider-name="vale44">
     <extension point="xbmc.addon.repository" name="Auto Cleaner Repository">
         <dir>
-            <info compressed="false">https://raw.githubusercontent.com/vale44/repository.vale44/main/addons.xml</info>
-            <checksum>https://raw.githubusercontent.com/vale44/repository.vale44/main/addons.xml.md5</checksum>
-            <datadir zip="true">https://raw.githubusercontent.com/vale44/repository.vale44/main/</datadir>
+            <info compressed="false">https://raw.githubusercontent.com/vale44/repository.vale44/main/generated/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/vale44/repository.vale44/main/generated/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/vale44/repository.vale44/main/generated/</datadir>
         </dir>
     </extension>
     <extension point="xbmc.addon.metadata">

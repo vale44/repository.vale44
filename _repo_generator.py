@@ -1,7 +1,7 @@
 """
     Put this script in the root folder of your repo and it will
-    zip up all addon folders, create a new zip in your base folder
-    and then update the md5 and addons.xml file
+    zip up all addon folders, create a new zip in the "generated" folder,
+    and then update the md5 and addons.xml file.
 """
 
 import hashlib
@@ -24,7 +24,7 @@ IGNORE = [
 
 def convert_bytes(num):
     """
-    this function will convert bytes to MB.... GB... etc
+    This function will convert bytes to MB.... GB... etc
     """
     for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
         if num < 1024.0:
@@ -33,7 +33,7 @@ def convert_bytes(num):
 
 class Generator:
     """
-    Generates a new addons.xml file from each addons addon.xml file
+    Generates a new addons.xml file from each addon's addon.xml file
     and a new addons.xml.md5 hash file. Must be run from the root of
     the checked-out repo.
     """
@@ -41,16 +41,19 @@ class Generator:
     def __init__(self, release):
         self.release_path = release
         self.base_path = os.path.abspath(os.path.join(self.release_path, os.pardir))  # One level up from the release_path
-        addons_xml_path = os.path.join(self.base_path, "addons.xml")
-        md5_path = os.path.join(self.base_path, "addons.xml.md5")
+        self.generated_path = os.path.join(self.base_path, "generated")
+        addons_xml_path = os.path.join(self.generated_path, "addons.xml")
+        md5_path = os.path.join(self.generated_path, "addons.xml.md5")
+
+        if not os.path.exists(self.generated_path):
+            os.makedirs(self.generated_path)
 
         self._remove_binaries()
 
         if self._generate_addons_file(addons_xml_path):
             if self._generate_md5_file(addons_xml_path, md5_path):
-                copied_files = self._copy_repository_zip_files()
-                if copied_files:
-                    self._update_index_html(copied_files)
+                self._copy_repository_zip_files()
+                self._update_index_html()
 
     def _remove_binaries(self):
         """
@@ -74,10 +77,10 @@ class Generator:
 
     def _create_zip(self, folder, addon_id, version):
         """
-        Creates a zip file in the base directory for the given addon.
+        Creates a zip file in the "generated" directory for the given addon.
         """
         addon_folder = os.path.join(self.release_path, folder)
-        zip_folder = os.path.join(self.base_path, addon_id)
+        zip_folder = os.path.join(self.generated_path, addon_id)
         if not os.path.exists(zip_folder):
             os.makedirs(zip_folder)
 
@@ -143,18 +146,13 @@ class Generator:
         """
         Generates a zip for each found addon, and updates the addons.xml file accordingly.
         """
-        if not os.path.exists(addons_xml_path):
-            addons_root = ElementTree.Element('addons')
-            addons_xml = ElementTree.ElementTree(addons_root)
-        else:
-            addons_xml = ElementTree.parse(addons_xml_path)
-            addons_root = addons_xml.getroot()
+        addons_root = ElementTree.Element('addons')
+        addons_xml = ElementTree.ElementTree(addons_root)
 
         folders = [
             i
             for i in os.listdir(self.release_path)
             if os.path.isdir(os.path.join(self.release_path, i))
-            and i != "zips"
             and not i.startswith(".")
             and os.path.exists(os.path.join(self.release_path, i, "addon.xml"))
         ]
@@ -176,16 +174,15 @@ class Generator:
                     addons_root.remove(addon_entry)
                     addons_root.insert(index, addon_root)
                     updated = True
-                    changed = True
-                elif addon_entry is None:
+                else:
                     addons_root.append(addon_root)
                     updated = True
-                    changed = True
 
                 if updated:
                     # Create the zip files
                     self._create_zip(addon, id, version)
-                    self._copy_meta_files(addon, os.path.join(self.base_path, id))
+                    self._copy_meta_files(addon, os.path.join(self.generated_path, id))
+                    changed = True
             except Exception as e:
                 pass
 
@@ -223,34 +220,31 @@ class Generator:
 
     def _copy_repository_zip_files(self):
         """
-        Copy the zip files starting with 'repository.' from the subfolders to the base folder.
+        Copy the zip files starting with 'repository.' from the subfolders to the "generated" folder.
         """
-        copied_files = []
-        for root, dirs, files in os.walk(self.base_path):
+        for root, dirs, files in os.walk(self.generated_path):
             for dir in dirs:
                 if dir.startswith("repository."):
                     dir_path = os.path.join(root, dir)
                     for file in os.listdir(dir_path):
                         if file.startswith("repository.") and file.endswith(".zip"):
                             src_path = os.path.join(dir_path, file)
-                            dest_path = os.path.join(self.base_path, file)
+                            dest_path = os.path.join(self.generated_path, file)
                             try:
                                 shutil.copy(src_path, dest_path)
-                                copied_files.append(file)
                             except Exception as e:
                                 pass
-        return copied_files
 
-    def _update_index_html(self, copied_files):
+    def _update_index_html(self):
         """
         Generate or update the index.html file with the copied zip files.
         """
-        index_html_path = os.path.join(self.base_path, "index.html")
+        index_html_path = os.path.join(self.generated_path, "index.html")
         with open(index_html_path, "w") as f:
             f.write("<!DOCTYPE html>\n")
-            for file in copied_files:
-                f.write('<a href="{}">{}</a>\n'.format(file, file))
-
+            for file in os.listdir(self.generated_path):
+                if file.endswith(".zip"):
+                    f.write('<a href="{}">{}</a>\n'.format(file, file))
 
 if __name__ == "__main__":
     for release in [r for r in KODI_VERSIONS if os.path.exists(r)]:
