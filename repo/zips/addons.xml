@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8'?>
+<addons><addon id="plugin.program.autocleaner" version="1.0.0" name="[COLOR lightgreen]Auto Cleaner[/COLOR]" provider-name="vale44">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0" />
+    </requires>
+    <extension point="xbmc.addon.metadata">
+        <summary>Auto Cleaner for Kodi</summary>
+        <description>Cleans up thumbnails, cache, and packages periodically to keep Kodi running smoothly.</description>
+        <platform>all</platform>
+        <license>GPL v2.0</license>
+        <source>https://github.com/vale44/plugin.program.autocleaner</source>
+    </extension>
+    <extension point="xbmc.service" library="service.py">
+        <provides>program</provides>
+    </extension>
+    <extension point="xbmc.python.script" library="default.py">
+        <provides>program</provides>
+    </extension>
+</addon><addon id="repository.vale44" name="Auto Cleaner Repository" version="1.0" provider-name="vale44">
+    <extension point="xbmc.addon.repository" name="Example Repository">
+        <dir>
+            <info compressed="false">https://raw.githubusercontent.com/vale44/repository.vale44/main/repo/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/vale44/repository.vale44/main/repo/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/vale44/repository.vale44/main/repo/zips/</datadir>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>Kodi Auto Cleaner Repository</summary>
+        <description>The Official Repository for the Auto Cleaner Add-on</description>
+        <disclaimer />
+        <platform>all</platform>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
+    </extension>
+</addon></addons>
