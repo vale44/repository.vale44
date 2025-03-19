@@ -139,11 +139,12 @@ class Generator:
     """
 
     def __init__(self, release):
+        print("Initializing Generator")
         self.release_path = release
         self.zips_path = os.path.join(self.release_path, "zips")
         self.base_path = os.path.abspath(os.path.join(self.release_path, os.pardir))  # One level up from the release_path
         addons_xml_path = os.path.join(self.zips_path, "addons.xml")
-        md5_path = os.path.join(self.release_path, "addons.xml.md5")
+        md5_path = os.path.join(self.base_path, "addons.xml.md5")
 
         if not os.path.exists(self.zips_path):
             os.makedirs(self.zips_path)
@@ -166,7 +167,7 @@ class Generator:
         """
         Removes any and all compiled Python files before operations.
         """
-
+        print("Removing binaries")
         for parent, dirnames, filenames in os.walk(self.release_path):
             for fn in filenames:
                 if fn.lower().endswith("pyo") or fn.lower().endswith("pyc"):
@@ -205,6 +206,7 @@ class Generator:
         """
         Creates a zip file in the zips directory for the given addon.
         """
+        print(f"Creating zip for {addon_id} version {version}")
         addon_folder = os.path.join(self.release_path, folder)
         zip_folder = os.path.join(self.zips_path, addon_id)
         if not os.path.exists(zip_folder):
@@ -251,7 +253,7 @@ class Generator:
         """
         Copy the addon.xml and relevant art files into the relevant folders in the repository.
         """
-
+        print(f"Copying meta files for {addon_id}")
         tree = ElementTree.parse(os.path.join(self.release_path, addon_id, "addon.xml"))
         root = tree.getroot()
 
@@ -281,6 +283,7 @@ class Generator:
         """
         Generates a zip for each found addon, and updates the addons.xml file accordingly.
         """
+        print("Generating addons.xml")
         if not os.path.exists(addons_xml_path):
             addons_root = ElementTree.Element('addons')
             addons_xml = ElementTree.ElementTree(addons_root)
@@ -350,6 +353,7 @@ class Generator:
         """
         Generates a new addons.xml.md5 file.
         """
+        print("Generating addons.xml.md5")
         try:
             with open(addons_xml_path, "r", encoding="utf-8") as f:
                 m = hashlib.md5(f.read().encode("utf-8")).hexdigest()
@@ -367,9 +371,10 @@ class Generator:
         """
         Saves a file.
         """
+        print(f"Saving file {file}")
         try:
             with open(file, "w") as f:
-                f.write(data)
+                f.write(data + "\n")
         except Exception as e:
             print(
                 "An error occurred saving {}!\n{}".format(
@@ -381,6 +386,7 @@ class Generator:
         """
         Copy the zip files starting with 'repository.' from the subfolders in the zips folder to the actual base folder.
         """
+        print("Copying repository zip files")
         copied_files = []
         for root, dirs, files in os.walk(self.zips_path):
             for dir in dirs:
@@ -412,11 +418,12 @@ class Generator:
         """
         Generate or update the index.html file with the copied zip files.
         """
+        print("Updating index.html")
         index_html_path = os.path.join(self.base_path, "index.html")
         with open(index_html_path, "w") as f:
             f.write("<!DOCTYPE html>\n")
             for file in copied_files:
-                f.write('<a href="{}">{}</a><br>\n'.format(file, file))
+                f.write('<a href="{}">{}</a>\n'.format(file, file))
         print("Updated index.html with the copied zip files.")
 
 if __name__ == "__main__":
