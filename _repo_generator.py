@@ -141,8 +141,8 @@ class Generator:
     def __init__(self, release):
         print("Initializing Generator")
         self.release_path = release
-        self.zips_path = os.path.join(self.release_path, "zips")
         self.base_path = os.path.abspath(os.path.join(self.release_path, os.pardir))  # One level up from the release_path
+        self.zips_path = os.path.join(self.base_path, "zips")
         addons_xml_path = os.path.join(self.zips_path, "addons.xml")
         md5_path = os.path.join(self.base_path, "addons.xml.md5")
 
@@ -340,6 +340,7 @@ class Generator:
                 addons_xml.write(
                     addons_xml_path, encoding="utf-8", xml_declaration=True
                 )
+                print("addons.xml generated successfully")
 
                 return changed
             except Exception as e:
@@ -358,6 +359,7 @@ class Generator:
             with open(addons_xml_path, "r", encoding="utf-8") as f:
                 m = hashlib.md5(f.read().encode("utf-8")).hexdigest()
                 self._save_file(m, file=md5_path)
+                print("addons.xml.md5 generated successfully")
 
             return True
         except Exception as e:
@@ -375,6 +377,7 @@ class Generator:
         try:
             with open(file, "w") as f:
                 f.write(data + "\n")
+            print(f"File {file} saved successfully")
         except Exception as e:
             print(
                 "An error occurred saving {}!\n{}".format(
