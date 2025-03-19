@@ -51,10 +51,10 @@ class Generator:
 
         self._remove_binaries()
 
-        if self._generate_addons_file(addons_xml_path):
-            if self._generate_md5_file(addons_xml_path, md5_path):
-                copied_files = self._copy_repository_zip_files()
-                self._update_index_html(copied_files)
+        self._generate_addons_file(addons_xml_path)
+        self._generate_md5_file(addons_xml_path, md5_path)
+        copied_files = self._copy_repository_zip_files()
+        self._update_index_html(copied_files)
 
     def _remove_binaries(self):
         """
@@ -86,33 +86,32 @@ class Generator:
             os.makedirs(zip_folder)
 
         final_zip = os.path.join(zip_folder, "{0}-{1}.zip".format(addon_id, version))
-        if not os.path.exists(final_zip):
-            zip = zipfile.ZipFile(final_zip, "w", compression=zipfile.ZIP_DEFLATED)
-            root_len = len(os.path.dirname(os.path.abspath(addon_folder)))
+        zip = zipfile.ZipFile(final_zip, "w", compression=zipfile.ZIP_DEFLATED)
+        root_len = len(os.path.dirname(os.path.abspath(addon_folder)))
 
-            for root, dirs, files in os.walk(addon_folder):
-                # remove any unneeded artifacts
-                for i in IGNORE:
-                    if i in dirs:
+        for root, dirs, files in os.walk(addon_folder):
+            # remove any unneeded artifacts
+            for i in IGNORE:
+                if i in dirs:
+                    try:
+                        dirs.remove(i)
+                    except:
+                        pass
+                for f in files:
+                    if f.startswith(i):
                         try:
-                            dirs.remove(i)
+                            files.remove(f)
                         except:
                             pass
-                    for f in files:
-                        if f.startswith(i):
-                            try:
-                                files.remove(f)
-                            except:
-                                pass
 
-                archive_root = os.path.abspath(root)[root_len:]
+            archive_root = os.path.abspath(root)[root_len:]
 
-                for f in files:
-                    fullpath = os.path.join(root, f)
-                    archive_name = os.path.join(archive_root, f)
-                    zip.write(fullpath, archive_name, zipfile.ZIP_DEFLATED)
+            for f in files:
+                fullpath = os.path.join(root, f)
+                archive_name = os.path.join(archive_root, f)
+                zip.write(fullpath, archive_name, zipfile.ZIP_DEFLATED)
 
-            zip.close()
+        zip.close()
 
     def _copy_meta_files(self, addon_id, addon_folder):
         """
@@ -159,7 +158,6 @@ class Generator:
         ]
 
         addon_xpath = "addon[@id='{}']"
-        changed = False
         for addon in folders:
             try:
                 addon_xml_path = os.path.join(self.release_path, addon, "addon.xml")
@@ -168,34 +166,27 @@ class Generator:
                 id = addon_root.get('id')
                 version = addon_root.get('version')
 
-                updated = False
                 addon_entry = addons_root.find(addon_xpath.format(id))
                 if addon_entry is not None:
                     index = addons_root.findall('addon').index(addon_entry)
                     addons_root.remove(addon_entry)
                     addons_root.insert(index, addon_root)
-                    updated = True
                 else:
                     addons_root.append(addon_root)
-                    updated = True
 
-                if updated:
-                    # Create the zip files
-                    self._create_zip(addon, id, version)
-                    self._copy_meta_files(addon, os.path.join(self.generated_path, id))
-                    changed = True
+                # Create the zip files
+                self._create_zip(addon, id, version)
+                self._copy_meta_files(addon, os.path.join(self.generated_path, id))
             except Exception as e:
                 pass
 
-        if changed:
-            addons_root[:] = sorted(addons_root, key=lambda addon: addon.get('id'))
-            try:
-                addons_xml.write(
-                    addons_xml_path, encoding="utf-8", xml_declaration=True
-                )
-                return changed
-            except Exception as e:
-                pass
+        addons_root[:] = sorted(addons_root, key=lambda addon: addon.get('id'))
+        try:
+            addons_xml.write(
+                addons_xml_path, encoding="utf-8", xml_declaration=True
+            )
+        except Exception as e:
+            pass
 
     def _generate_md5_file(self, addons_xml_path, md5_path):
         """
@@ -205,7 +196,6 @@ class Generator:
             with open(addons_xml_path, "r", encoding="utf-8") as f:
                 m = hashlib.md5(f.read().encode("utf-8")).hexdigest()
                 self._save_file(m, file=md5_path)
-                return True
         except Exception as e:
             pass
 
