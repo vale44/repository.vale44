@@ -1,15 +1,13 @@
-""" 
+"""
     Put this script in the root folder of your repo and it will
-    zip up all addon folders, create a new zip in your zips folder
+    zip up all addon folders, create a new zip in your base folder
     and then update the md5 and addons.xml file
 """
 
 import hashlib
 import os
 import shutil
-import sys
 import zipfile
-
 from xml.etree import ElementTree
 
 SCRIPT_VERSION = 5
@@ -23,103 +21,6 @@ IGNORE = [
     ".idea",
     "venv",
 ]
-_COLOR_ESCAPE = "\x1b[{}m"
-_COLORS = {
-    "black": "30",
-    "red": "31",
-    "green": "4;32",
-    "yellow": "3;33",
-    "blue": "34",
-    "magenta": "35",
-    "cyan": "1;36",
-    "grey": "37",
-    "endc": "0",
-}
-
-
-def _setup_colors():
-    """
-    Return True if the running system's terminal supports color,
-    and False otherwise.
-    """
-
-    def vt_codes_enabled_in_windows_registry():
-        """
-        Check the Windows registry to see if VT code handling has been enabled by default.
-        """
-        try:
-            import winreg
-        except:
-            return False
-        else:
-            reg_key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER, "Console", access=winreg.KEY_ALL_ACCESS
-            )
-            try:
-                reg_key_value, _ = winreg.QueryValueEx(reg_key, "VirtualTerminalLevel")
-            except FileNotFoundError:
-                try:
-                    winreg.SetValueEx(
-                        reg_key, "VirtualTerminalLevel", 0, winreg.KEY_DWORD, 1
-                    )
-                except:
-                    return False
-                else:
-                    reg_key_value, _ = winreg.QueryValueEx(
-                        reg_key, "VirtualTerminalLevel"
-                    )
-            else:
-                return reg_key_value == 1
-
-    def is_a_tty():
-        return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
-
-    def legacy_support():
-        console = 0
-        color = 0
-        if sys.platform in ["linux", "linux2", "darwin"]:
-            pass
-        elif sys.platform == "win32":
-            color = os.system("color")
-
-            from ctypes import windll
-
-            k = windll.kernel32
-            console = k.SetConsoleMode(k.GetStdHandle(-11), 7)
-
-        return any([color == 1, console == 1])
-
-    return any(
-        [
-            is_a_tty(),
-            sys.platform != "win32",
-            "ANSICON" in os.environ,
-            "WT_SESSION" in os.environ,
-            os.environ.get("TERM_PROGRAM") == "vscode",
-            vt_codes_enabled_in_windows_registry(),
-            legacy_support(),
-        ]
-    )
-
-
-_SUPPORTS_COLOR = _setup_colors()
-
-
-def color_text(text, color):
-    """
-    Return an ANSI-colored string, if supported.
-    """
-
-    return (
-        '{}{}{}'.format(
-            _COLOR_ESCAPE.format(_COLORS[color]),
-            text,
-            _COLOR_ESCAPE.format(_COLORS["endc"]),
-        )
-        if _SUPPORTS_COLOR
-        else text
-    )
-
 
 def convert_bytes(num):
     """
@@ -130,7 +31,6 @@ def convert_bytes(num):
             return "%3.1f %s" % (num, x)
         num /= 1024.0
 
-
 class Generator:
     """
     Generates a new addons.xml file from each addons addon.xml file
@@ -139,76 +39,45 @@ class Generator:
     """
 
     def __init__(self, release):
-        print("Initializing Generator")
         self.release_path = release
         self.base_path = os.path.abspath(os.path.join(self.release_path, os.pardir))  # One level up from the release_path
-        self.zips_path = os.path.join(self.base_path, "zips")
-        addons_xml_path = os.path.join(self.zips_path, "addons.xml")
+        addons_xml_path = os.path.join(self.base_path, "addons.xml")
         md5_path = os.path.join(self.base_path, "addons.xml.md5")
-
-        if not os.path.exists(self.zips_path):
-            os.makedirs(self.zips_path)
 
         self._remove_binaries()
 
         if self._generate_addons_file(addons_xml_path):
-            print(
-                "Successfully updated {}".format(color_text(addons_xml_path, 'yellow'))
-            )
-
             if self._generate_md5_file(addons_xml_path, md5_path):
-                print("Successfully updated {}".format(color_text(md5_path, 'yellow')))
-            
-            copied_files = self._copy_repository_zip_files()
-            if copied_files:
-                self._update_index_html(copied_files)
+                copied_files = self._copy_repository_zip_files()
+                if copied_files:
+                    self._update_index_html(copied_files)
 
     def _remove_binaries(self):
         """
         Removes any and all compiled Python files before operations.
         """
-        print("Removing binaries")
         for parent, dirnames, filenames in os.walk(self.release_path):
             for fn in filenames:
                 if fn.lower().endswith("pyo") or fn.lower().endswith("pyc"):
                     compiled = os.path.join(parent, fn)
                     try:
                         os.remove(compiled)
-                        print(
-                            "Removed compiled python file: {}".format(
-                                color_text(compiled, 'green')
-                            )
-                        )
                     except:
-                        print(
-                            "Failed to remove compiled python file: {}".format(
-                                color_text(compiled, 'red')
-                            )
-                        )
+                        pass
             for dir in dirnames:
                 if "pycache" in dir.lower():
                     compiled = os.path.join(parent, dir)
                     try:
                         shutil.rmtree(compiled)
-                        print(
-                            "Removed __pycache__ cache folder: {}".format(
-                                color_text(compiled, 'green')
-                            )
-                        )
                     except:
-                        print(
-                            "Failed to remove __pycache__ cache folder:  {}".format(
-                                color_text(compiled, 'red')
-                            )
-                        )
+                        pass
 
     def _create_zip(self, folder, addon_id, version):
         """
-        Creates a zip file in the zips directory for the given addon.
+        Creates a zip file in the base directory for the given addon.
         """
-        print(f"Creating zip for {addon_id} version {version}")
         addon_folder = os.path.join(self.release_path, folder)
-        zip_folder = os.path.join(self.zips_path, addon_id)
+        zip_folder = os.path.join(self.base_path, addon_id)
         if not os.path.exists(zip_folder):
             os.makedirs(zip_folder)
 
@@ -240,20 +109,11 @@ class Generator:
                     zip.write(fullpath, archive_name, zipfile.ZIP_DEFLATED)
 
             zip.close()
-            size = convert_bytes(os.path.getsize(final_zip))
-            print(
-                "Zip created for {} ({}) - {}".format(
-                    color_text(addon_id, 'cyan'),
-                    color_text(version, 'green'),
-                    color_text(size, 'yellow'),
-                )
-            )
 
     def _copy_meta_files(self, addon_id, addon_folder):
         """
         Copy the addon.xml and relevant art files into the relevant folders in the repository.
         """
-        print(f"Copying meta files for {addon_id}")
         tree = ElementTree.parse(os.path.join(self.release_path, addon_id, "addon.xml"))
         root = tree.getroot()
 
@@ -272,18 +132,17 @@ class Generator:
             if not os.path.exists(addon_path):
                 continue
 
-            zips_path = os.path.join(addon_folder, file)
-            asset_path = os.path.split(zips_path)[0]
+            dest_path = os.path.join(addon_folder, file)
+            asset_path = os.path.split(dest_path)[0]
             if not os.path.exists(asset_path):
                 os.makedirs(asset_path)
 
-            shutil.copy(addon_path, zips_path)
+            shutil.copy(addon_path, dest_path)
 
     def _generate_addons_file(self, addons_xml_path):
         """
         Generates a zip for each found addon, and updates the addons.xml file accordingly.
         """
-        print("Generating addons.xml")
         if not os.path.exists(addons_xml_path):
             addons_root = ElementTree.Element('addons')
             addons_xml = ElementTree.ElementTree(addons_root)
@@ -312,7 +171,7 @@ class Generator:
 
                 updated = False
                 addon_entry = addons_root.find(addon_xpath.format(id))
-                if addon_entry is not None and addon_entry.get('version') != version:
+                if addon_entry is not None:
                     index = addons_root.findall('addon').index(addon_entry)
                     addons_root.remove(addon_entry)
                     addons_root.insert(index, addon_root)
@@ -326,13 +185,9 @@ class Generator:
                 if updated:
                     # Create the zip files
                     self._create_zip(addon, id, version)
-                    self._copy_meta_files(addon, os.path.join(self.zips_path, id))
+                    self._copy_meta_files(addon, os.path.join(self.base_path, id))
             except Exception as e:
-                print(
-                    "Excluding {}: {}".format(
-                        color_text(addon, 'yellow'), color_text(e, 'red')
-                    )
-                )
+                pass
 
         if changed:
             addons_root[:] = sorted(addons_root, key=lambda addon: addon.get('id'))
@@ -340,58 +195,38 @@ class Generator:
                 addons_xml.write(
                     addons_xml_path, encoding="utf-8", xml_declaration=True
                 )
-                print("addons.xml generated successfully")
-
                 return changed
             except Exception as e:
-                print(
-                    "An error occurred updating {}!\n{}".format(
-                        color_text(addons_xml_path, 'yellow'), color_text(e, 'red')
-                    )
-                )
+                pass
 
     def _generate_md5_file(self, addons_xml_path, md5_path):
         """
         Generates a new addons.xml.md5 file.
         """
-        print("Generating addons.xml.md5")
         try:
             with open(addons_xml_path, "r", encoding="utf-8") as f:
                 m = hashlib.md5(f.read().encode("utf-8")).hexdigest()
                 self._save_file(m, file=md5_path)
-                print("addons.xml.md5 generated successfully")
-
-            return True
+                return True
         except Exception as e:
-            print(
-                "An error occurred updating {}!\n{}".format(
-                    color_text(md5_path, 'yellow'), color_text(e, 'red')
-                )
-            )
+            pass
 
     def _save_file(self, data, file):
         """
         Saves a file.
         """
-        print(f"Saving file {file}")
         try:
             with open(file, "w") as f:
                 f.write(data + "\n")
-            print(f"File {file} saved successfully")
         except Exception as e:
-            print(
-                "An error occurred saving {}!\n{}".format(
-                    color_text(file, 'yellow'), color_text(e, 'red')
-                )
-            )
+            pass
 
     def _copy_repository_zip_files(self):
         """
-        Copy the zip files starting with 'repository.' from the subfolders in the zips folder to the actual base folder.
+        Copy the zip files starting with 'repository.' from the subfolders to the base folder.
         """
-        print("Copying repository zip files")
         copied_files = []
-        for root, dirs, files in os.walk(self.zips_path):
+        for root, dirs, files in os.walk(self.base_path):
             for dir in dirs:
                 if dir.startswith("repository."):
                     dir_path = os.path.join(root, dir)
@@ -402,32 +237,20 @@ class Generator:
                             try:
                                 shutil.copy(src_path, dest_path)
                                 copied_files.append(file)
-                                print(
-                                    "Copied {} to {}".format(
-                                        color_text(src_path, 'green'), color_text(dest_path, 'green')
-                                    )
-                                )
                             except Exception as e:
-                                print(
-                                    "Failed to copy {} to {}: {}".format(
-                                        color_text(src_path, 'red'),
-                                        color_text(dest_path, 'red'),
-                                        color_text(e, 'red'),
-                                    )
-                                )
+                                pass
         return copied_files
 
     def _update_index_html(self, copied_files):
         """
         Generate or update the index.html file with the copied zip files.
         """
-        print("Updating index.html")
         index_html_path = os.path.join(self.base_path, "index.html")
         with open(index_html_path, "w") as f:
             f.write("<!DOCTYPE html>\n")
             for file in copied_files:
                 f.write('<a href="{}">{}</a>\n'.format(file, file))
-        print("Updated index.html with the copied zip files.")
+
 
 if __name__ == "__main__":
     for release in [r for r in KODI_VERSIONS if os.path.exists(r)]:
