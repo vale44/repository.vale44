@@ -141,8 +141,9 @@ class Generator:
     def __init__(self, release):
         self.release_path = release
         self.zips_path = os.path.join(self.release_path, "zips")
+        self.base_path = os.path.abspath(os.path.join(self.release_path, os.pardir))  # One level up from the release_path
         addons_xml_path = os.path.join(self.zips_path, "addons.xml")
-        md5_path = os.path.join(self.zips_path, "addons.xml.md5")
+        md5_path = os.path.join(self.release_path, "addons.xml.md5")
 
         if not os.path.exists(self.zips_path):
             os.makedirs(self.zips_path)
@@ -156,6 +157,10 @@ class Generator:
 
             if self._generate_md5_file(addons_xml_path, md5_path):
                 print("Successfully updated {}".format(color_text(md5_path, 'yellow')))
+            
+            copied_files = self._copy_repository_zip_files()
+            if copied_files:
+                self._update_index_html(copied_files)
 
     def _remove_binaries(self):
         """
@@ -372,6 +377,47 @@ class Generator:
                 )
             )
 
+    def _copy_repository_zip_files(self):
+        """
+        Copy the zip files starting with 'repository.' from the subfolders in the zips folder to the actual base folder.
+        """
+        copied_files = []
+        for root, dirs, files in os.walk(self.zips_path):
+            for dir in dirs:
+                if dir.startswith("repository."):
+                    dir_path = os.path.join(root, dir)
+                    for file in os.listdir(dir_path):
+                        if file.startswith("repository.") and file.endswith(".zip"):
+                            src_path = os.path.join(dir_path, file)
+                            dest_path = os.path.join(self.base_path, file)
+                            try:
+                                shutil.copy(src_path, dest_path)
+                                copied_files.append(file)
+                                print(
+                                    "Copied {} to {}".format(
+                                        color_text(src_path, 'green'), color_text(dest_path, 'green')
+                                    )
+                                )
+                            except Exception as e:
+                                print(
+                                    "Failed to copy {} to {}: {}".format(
+                                        color_text(src_path, 'red'),
+                                        color_text(dest_path, 'red'),
+                                        color_text(e, 'red'),
+                                    )
+                                )
+        return copied_files
+
+    def _update_index_html(self, copied_files):
+        """
+        Generate or update the index.html file with the copied zip files.
+        """
+        index_html_path = os.path.join(self.base_path, "index.html")
+        with open(index_html_path, "w") as f:
+            f.write("<!DOCTYPE html>\n")
+            for file in copied_files:
+                f.write('<a href="{}">{}</a><br>\n'.format(file, file))
+        print("Updated index.html with the copied zip files.")
 
 if __name__ == "__main__":
     for release in [r for r in KODI_VERSIONS if os.path.exists(r)]:
