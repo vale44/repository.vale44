@@ -1,7 +1,8 @@
 """
     Put this script in the root folder of your repo and it will
     zip up all addon folders, create a new zip in the "generated" folder,
-    and then update the md5 and addons.xml file.
+    and then update the md5 and addons.xml file. The index.html file
+    and the copied zip files will be in the base folder.
 """
 
 import hashlib
@@ -52,8 +53,8 @@ class Generator:
 
         if self._generate_addons_file(addons_xml_path):
             if self._generate_md5_file(addons_xml_path, md5_path):
-                self._copy_repository_zip_files()
-                self._update_index_html()
+                copied_files = self._copy_repository_zip_files()
+                self._update_index_html(copied_files)
 
     def _remove_binaries(self):
         """
@@ -220,8 +221,9 @@ class Generator:
 
     def _copy_repository_zip_files(self):
         """
-        Copy the zip files starting with 'repository.' from the subfolders to the "generated" folder.
+        Copy the zip files starting with 'repository.' from the subfolders to the base folder.
         """
+        copied_files = []
         for root, dirs, files in os.walk(self.generated_path):
             for dir in dirs:
                 if dir.startswith("repository."):
@@ -229,22 +231,23 @@ class Generator:
                     for file in os.listdir(dir_path):
                         if file.startswith("repository.") and file.endswith(".zip"):
                             src_path = os.path.join(dir_path, file)
-                            dest_path = os.path.join(self.generated_path, file)
+                            dest_path = os.path.join(self.base_path, file)
                             try:
                                 shutil.copy(src_path, dest_path)
+                                copied_files.append(file)
                             except Exception as e:
                                 pass
+        return copied_files
 
-    def _update_index_html(self):
+    def _update_index_html(self, copied_files):
         """
         Generate or update the index.html file with the copied zip files.
         """
-        index_html_path = os.path.join(self.generated_path, "index.html")
+        index_html_path = os.path.join(self.base_path, "index.html")
         with open(index_html_path, "w") as f:
             f.write("<!DOCTYPE html>\n")
-            for file in os.listdir(self.generated_path):
-                if file.endswith(".zip"):
-                    f.write('<a href="{}">{}</a>\n'.format(file, file))
+            for file in copied_files:
+                f.write('<a href="{}">{}</a>\n'.format(file, file))
 
 if __name__ == "__main__":
     for release in [r for r in KODI_VERSIONS if os.path.exists(r)]:
