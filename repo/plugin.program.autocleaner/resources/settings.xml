@@ -1,0 +1,16 @@
+<settings>
+    <category label="General Settings">
+        <setting id="run_on_startup" type="bool" label="Run on startup" default="true" />
+        <setting id="run_periodically" type="bool" label="Run periodically" default="true" />
+        <setting id="check_interval" type="number" label="Check interval (minutes)" default="10" />
+    </category>
+    <category label="Folder Size Limits">
+        <setting id="thumb_size_limit" type="number" label="Thumbnails size limit (MB)" default="12" />
+        <setting id="cache_size_limit" type="number" label="Cache size limit (MB)" default="8" />
+        <setting id="packages_size_limit" type="number" label="Packages size limit (MB)" default="0" /> <!-- 0 means always delete -->
+    </category>
+    <category label="Notifications">
+        <setting id="show_notifications" type="bool" label="Show notifications" default="true" />
+        <setting id="notification_sound" type="bool" label="Notification sound" default="true" />
+    </category>
+</settings>

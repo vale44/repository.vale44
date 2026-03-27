@@ -1,0 +1,18 @@
+<addon id="plugin.program.autocleaner" version="1.0.0" name="[COLOR lightgreen]Auto Cleaner[/COLOR]" provider-name="vale44">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.addon.metadata">
+        <summary>Auto Cleaner for Kodi</summary>
+        <description>Cleans up thumbnails, cache, and packages periodically to keep Kodi running smoothly.</description>
+        <platform>all</platform>
+        <license>GPL v2.0</license>
+        <source>https://github.com/vale44/plugin.program.autocleaner</source>
+    </extension>
+    <extension point="xbmc.service" library="service.py">
+        <provides>program</provides>
+    </extension>
+    <extension point="xbmc.python.script" library="default.py">
+        <provides>program</provides>
+    </extension>
+</addon>
