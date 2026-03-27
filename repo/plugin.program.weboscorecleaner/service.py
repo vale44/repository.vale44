@@ -4,7 +4,7 @@ import sys
 import default  # Import the default module to call its functions
 
 # Ensure the add-on context is properly set
-ADDON = xbmcaddon.Addon(id='plugin.program.weboscorecleanar')
+ADDON = xbmcaddon.Addon(id='plugin.program.weboscorecleaner')
 ADDON_PATH = ADDON.getAddonInfo('path')
 sys.path.append(ADDON_PATH)
 
