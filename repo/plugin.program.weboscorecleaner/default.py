@@ -10,7 +10,7 @@ import sys
 import re
 from collections import deque
 
-ADDON = xbmcaddon.Addon(id='plugin.program.weboscorecleanar')
+ADDON = xbmcaddon.Addon(id='plugin.program.weboscorecleaner')
 ADDON_PATH = ADDON.getAddonInfo('path')
 sys.path.append(ADDON_PATH)
 
