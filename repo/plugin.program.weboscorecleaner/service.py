@@ -4,17 +4,17 @@ import sys
 import default  # Import the default module to call its functions
 
 # Ensure the add-on context is properly set
-ADDON = xbmcaddon.Addon(id='plugin.program.autocleaner')
+ADDON = xbmcaddon.Addon(id='plugin.program.weboscorecleaner')
 ADDON_PATH = ADDON.getAddonInfo('path')
 sys.path.append(ADDON_PATH)
 
-# Your existing service logic here
+# Logging function
 def log_message(message):
-    xbmc.log(f"[COLOR lightgreen]Auto Cleaner[/COLOR]: {message}", xbmc.LOGINFO)
+    xbmc.log(f"[COLOR orange]WebOS Core Cleaner[/COLOR]: {message}", xbmc.LOGINFO)
 
 log_message("Service starting")
 
-# Example service functionality
+# Service functionality
 def run_service():
     while not xbmc.Monitor().abortRequested():
         log_message("Service running")
